@@ -1,0 +1,1309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+clock heart_t;
+
+broadcast chan APace, VPace;
+chan ASense, VSense, ASignal, VSignal;
+broadcast chan ASignalBroad, VSignalBroad;
+broadcast chan AlarmCheck;
+//keyboard
+chan Heart_R, Heart_M, Heart_T, Heart_A, Heart_V, Heart_O, Heart_Num[10];
+chan HeartIntervalChange;
+chan PMIntervalChange;
+chan PM_N, PM_S, PM_E, PM_M, PM_A, PM_V, PM_O, PM_Num[10];
+
+// PACING CONSTRAINTS
+
+const int AVI = 60;			// 30 - 100
+const int PVRP = 150; 			// 150 - 500
+const int VRP = PVRP;
+const int minVwait = 40;		// 0 - 200
+const int minAwait = 40;		// 0 - 100
+
+const int sleepURI = 1000;	const int sleepLRI = 2000;
+const int normalURI = 600;	const int normalLRI = 1500;
+const int sportURI = 343;	const int sportLRI = 600;
+const int manualURI = 343;	const int manualLRI = 2000;
+
+const int minSwitchInterval = 5;
+
+//variables
+
+int URI = normalURI;	int LRI = normalLRI;
+int beats = 0;
+int heartInterval = 10;
+int pmInterval = 10;
+int avg_rate=0;
+
+
+// flags
+bool heart_manual = false;
+bool heart_test = false;
+bool pm_manual = false;
+bool change_mode=false;
+bool extra_ventricular = false;</declaration>
+	<template>
+		<name x="5" y="5">HeartSignal</name>
+		<declaration>// Place local declarations here.
+</declaration>
+		<location id="id0" x="-1128" y="-720">
+			<committed/>
+		</location>
+		<location id="id1" x="-1128" y="-128">
+			<committed/>
+		</location>
+		<location id="id2" x="-1128" y="-560">
+			<name x="-1136" y="-600">ASignalReady</name>
+			<committed/>
+		</location>
+		<location id="id3" x="-1128" y="-304">
+			<committed/>
+		</location>
+		<location id="id4" x="-1128" y="-432">
+		</location>
+		<init ref="id4"/>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id4"/>
+			<label kind="synchronisation" x="-1008" y="-264">VSignalBroad!</label>
+			<nail x="-904" y="-128"/>
+			<nail x="-904" y="-416"/>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id4"/>
+			<label kind="synchronisation" x="-1000" y="-616">ASignalBroad!</label>
+			<nail x="-896" y="-720"/>
+			<nail x="-904" y="-448"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id2"/>
+			<label kind="synchronisation" x="-1304" y="-512">Heart_A?</label>
+			<nail x="-1232" y="-504"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="-1296" y="-368">Heart_V?</label>
+			<nail x="-1228" y="-369"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id0"/>
+			<label kind="synchronisation" x="-1264" y="-664">ASignal!</label>
+			<label kind="assignment" x="-1264" y="-640">heart_t = 0</label>
+			<nail x="-1256" y="-720"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-1280" y="-240">VSignal!</label>
+			<label kind="assignment" x="-1320" y="-216">heart_t = 0,
+beats += 1</label>
+			<nail x="-1296" y="-128"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id2"/>
+			<label kind="guard" x="-1096" y="-512">heart_t &gt; minAwait &amp;&amp; !heart_test</label>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id3"/>
+			<label kind="guard" x="-1104" y="-376">heart_t &gt; minVwait &amp;&amp; !heart_test</label>
+		</transition>
+	</template>
+	<template>
+		<name>HeartPace</name>
+		<location id="id5" x="-608" y="-264">
+		</location>
+		<init ref="id5"/>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id5"/>
+			<label kind="synchronisation" x="-632" y="-80">VPace?</label>
+			<label kind="assignment" x="-640" y="-56">heart_t = 0,
+beats += 1</label>
+			<nail x="-616" y="-248"/>
+			<nail x="-712" y="-96"/>
+			<nail x="-512" y="-96"/>
+			<nail x="-600" y="-248"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id5"/>
+			<label kind="synchronisation" x="-632" y="-496">APace?</label>
+			<label kind="assignment" x="-640" y="-480">heart_t = 0</label>
+			<nail x="-712" y="-456"/>
+			<nail x="-504" y="-456"/>
+		</transition>
+	</template>
+	<template>
+		<name>PMSense</name>
+		<declaration>clock t;</declaration>
+		<location id="id6" x="-1768" y="-488">
+			<committed/>
+		</location>
+		<location id="id7" x="-1496" y="-646">
+		</location>
+		<location id="id8" x="-1776" y="-648">
+			<committed/>
+		</location>
+		<location id="id9" x="-2048" y="-646">
+		</location>
+		<init ref="id9"/>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-2175" y="-552">t &lt; VRP</label>
+			<label kind="synchronisation" x="-2175" y="-535">VSignal?</label>
+			<nail x="-2048" y="-518"/>
+			<nail x="-2193" y="-518"/>
+			<nail x="-2193" y="-518"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-1955" y="-544">t &gt;= VRP</label>
+			<label kind="synchronisation" x="-1904" y="-512">VSignal?</label>
+			<nail x="-1912" y="-488"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-2120" y="-726">t &lt; PVRP</label>
+			<label kind="synchronisation" x="-2112" y="-758">ASignal?</label>
+			<nail x="-2144" y="-726"/>
+			<nail x="-2048" y="-726"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id9"/>
+			<label kind="synchronisation" x="-1784" y="-424">VPace?</label>
+			<label kind="assignment" x="-1776" y="-392">t = 0</label>
+			<nail x="-1576" y="-400"/>
+			<nail x="-1936" y="-400"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id9"/>
+			<label kind="synchronisation" x="-1927" y="-610">VSense!</label>
+			<label kind="assignment" x="-1887" y="-586">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="-1800" y="-776">APace?</label>
+			<nail x="-1776" y="-752"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="-1424" y="-726">ASignal?</label>
+			<nail x="-1496" y="-758"/>
+			<nail x="-1376" y="-646"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-1648" y="-552">VSignal?</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="-1704" y="-680">ASense!</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-1928" y="-648">t &gt;= PVRP</label>
+			<label kind="synchronisation" x="-1928" y="-672">ASignal?</label>
+		</transition>
+	</template>
+	<template>
+		<name>PMPace</name>
+		<declaration>clock t;
+</declaration>
+		<location id="id10" x="-944" y="-416">
+			<committed/>
+		</location>
+		<location id="id11" x="-936" y="-672">
+			<committed/>
+		</location>
+		<location id="id12" x="-672" y="-584">
+			<label kind="invariant" x="-640" y="-600">t &lt;= AVI</label>
+		</location>
+		<location id="id13" x="-1216" y="-584">
+			<label kind="invariant" x="-1352" y="-592">t &lt;= LRI - AVI</label>
+		</location>
+		<init ref="id13"/>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="-909" y="-612">PM_A?</label>
+			<label kind="assignment" x="-917" y="-585">change_mode=false</label>
+			<nail x="-935" y="-586"/>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="-1003" y="-518">PM_V?</label>
+			<nail x="-943" y="-527"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id13"/>
+			<label kind="synchronisation" x="-1112" y="-496">VPace!</label>
+			<label kind="assignment" x="-1104" y="-480">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="-816" y="-480">PM_V?</label>
+			<label kind="assignment" x="-926" y="-500">change_mode=false</label>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id12"/>
+			<label kind="synchronisation" x="-856" y="-664">APace!</label>
+			<label kind="assignment" x="-799" y="-646">t = 0, change_mode=true</label>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="-1112" y="-664">PM_A?</label>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id13"/>
+			<label kind="synchronisation" x="-1296" y="-456">VSense?</label>
+			<label kind="assignment" x="-1296" y="-432">t = 0</label>
+			<nail x="-1216" y="-432"/>
+			<nail x="-1368" y="-432"/>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id13"/>
+			<label kind="guard" x="-968" y="-368">t &gt;= AVI</label>
+			<label kind="synchronisation" x="-1048" y="-368">VPace!</label>
+			<label kind="assignment" x="-856" y="-368">t = 0, change_mode=false</label>
+			<nail x="-776" y="-344"/>
+			<nail x="-1088" y="-344"/>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id12"/>
+			<label kind="guard" x="-1000" y="-832">t &gt;= LRI - AVI</label>
+			<label kind="synchronisation" x="-1072" y="-832">APace!</label>
+			<label kind="assignment" x="-856" y="-832">t = 0, change_mode=true</label>
+			<nail x="-1080" y="-808"/>
+			<nail x="-816" y="-808"/>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id13"/>
+			<label kind="synchronisation" x="-1024" y="-280">VSense?</label>
+			<label kind="assignment" x="-904" y="-272">t = 0, change_mode=false</label>
+			<nail x="-736" y="-288"/>
+			<nail x="-1136" y="-288"/>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id12"/>
+			<label kind="synchronisation" x="-1040" y="-736">ASense?</label>
+			<label kind="assignment" x="-920" y="-736">t = 0, change_mode=true</label>
+			<nail x="-1080" y="-744"/>
+			<nail x="-824" y="-744"/>
+		</transition>
+	</template>
+	<template>
+		<name>Alarm</name>
+		<location id="id14" x="0" y="170">
+			<name x="17" y="153">OKAlarm</name>
+			<committed/>
+		</location>
+		<location id="id15" x="-221" y="0">
+			<name x="-212" y="-34">HighRateAlarm</name>
+			<committed/>
+		</location>
+		<location id="id16" x="221" y="0">
+			<name x="211" y="-34">LowRateAlarm</name>
+			<committed/>
+		</location>
+		<location id="id17" x="0" y="0">
+		</location>
+		<init ref="id17"/>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id17"/>
+			<nail x="-136" y="170"/>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id14"/>
+			<label kind="guard" x="8" y="76">avg_rate&gt;=(60000/LRI) &amp;&amp; avg_rate&lt;=(60000/URI)</label>
+			<label kind="synchronisation" x="8" y="110">AlarmCheck?</label>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id17"/>
+			<nail x="-221" y="-136"/>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id15"/>
+			<label kind="guard" x="-161" y="17">avg_rate &gt; (60000/URI)</label>
+			<label kind="synchronisation" x="-153" y="0">AlarmCheck?</label>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id17"/>
+			<nail x="221" y="119"/>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id16"/>
+			<label kind="guard" x="18" y="-34">avg_rate &lt; (60000/LRI)</label>
+			<label kind="synchronisation" x="76" y="-17">AlarmCheck?</label>
+		</transition>
+	</template>
+	<template>
+		<name>HeartDisplay</name>
+		<declaration>clock display_t;</declaration>
+		<location id="id18" x="-399" y="-263">
+			<name x="-425" y="-297">Display_Rate</name>
+			<committed/>
+		</location>
+		<location id="id19" x="-391" y="-76">
+			<label kind="invariant" x="-346" y="-125">display_t &lt;= heartInterval * 1000
+&amp;&amp; beats &lt; 10000</label>
+		</location>
+		<init ref="id19"/>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="-306" y="-238">AlarmCheck!</label>
+			<label kind="assignment" x="-306" y="-212">beats = 0,
+display_t = 0</label>
+			<nail x="-306" y="-263"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-680" y="-178">display_t &gt;= heartInterval * 1000</label>
+			<label kind="assignment" x="-671" y="-229">avg_rate = (beats*60)/heartInterval</label>
+			<nail x="-501" y="-263"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="-687" y="-41">HeartIntervalChange?</label>
+			<label kind="assignment" x="-926" y="76">display_t = 0,
+beats = 0</label>
+			<nail x="-747" y="36"/>
+			<nail x="-747" y="132"/>
+		</transition>
+	</template>
+	<template>
+		<name>PMDisplay</name>
+		<declaration>clock display_t;</declaration>
+		<location id="id20" x="-118" y="-306">
+			<name x="-144" y="-340">Display_Rate</name>
+			<committed/>
+		</location>
+		<location id="id21" x="-110" y="-119">
+			<label kind="invariant" x="-65" y="-168">display_t &lt;= pmInterval * 1000
+&amp;&amp; beats &lt; 10000</label>
+		</location>
+		<init ref="id21"/>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="assignment" x="-25" y="-255">beats = 0,
+display_t = 0</label>
+			<nail x="-25" y="-306"/>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id20"/>
+			<label kind="guard" x="-399" y="-221">display_t &gt;= pmInterval * 1000</label>
+			<label kind="assignment" x="-390" y="-272">avg_rate = (beats*60)/pmInterval</label>
+			<nail x="-220" y="-306"/>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id21"/>
+			<label kind="synchronisation" x="-406" y="-84">PMIntervalChange?</label>
+			<label kind="assignment" x="-645" y="33">display_t = 0,
+beats = 0</label>
+			<nail x="-466" y="-7"/>
+			<nail x="-466" y="89"/>
+		</transition>
+	</template>
+	<template>
+		<name>LED</name>
+		<location id="id22" x="-1088" y="-528">
+			<name x="-1098" y="-558">LEDVSignal</name>
+			<committed/>
+		</location>
+		<location id="id23" x="-1072" y="-232">
+			<name x="-1192" y="-240">LEDASignal</name>
+			<committed/>
+		</location>
+		<location id="id24" x="-784" y="-240">
+			<name x="-760" y="-248">LEDVPace</name>
+			<committed/>
+		</location>
+		<location id="id25" x="-792" y="-528">
+			<name x="-802" y="-558">LEDAPace</name>
+			<committed/>
+		</location>
+		<location id="id26" x="-936" y="-368">
+		</location>
+		<init ref="id26"/>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id26"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id22"/>
+			<label kind="synchronisation" x="-1216" y="-440">VSignalBroad?</label>
+			<nail x="-1088" y="-368"/>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id26"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id23"/>
+			<label kind="synchronisation" x="-1032" y="-224">ASignalBroad?</label>
+			<nail x="-936" y="-232"/>
+		</transition>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id26"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id24"/>
+			<label kind="synchronisation" x="-768" y="-344">VPace?</label>
+			<nail x="-784" y="-368"/>
+		</transition>
+		<transition>
+			<source ref="id25"/>
+			<target ref="id26"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id25"/>
+			<label kind="synchronisation" x="-936" y="-552">APace?</label>
+			<nail x="-936" y="-528"/>
+		</transition>
+	</template>
+	<template>
+		<name>HeartKeyboard</name>
+		<declaration>clock t;</declaration>
+		<location id="id27" x="-899" y="-595">
+			<committed/>
+		</location>
+		<location id="id28" x="-712" y="-595">
+		</location>
+		<location id="id29" x="-491" y="-595">
+		</location>
+		<location id="id30" x="-289" y="-595">
+		</location>
+		<init ref="id30"/>
+		<transition>
+			<source ref="id27"/>
+			<target ref="id30"/>
+			<label kind="assignment" x="-1068" y="-459">t = 0</label>
+			<nail x="-1086" y="-324"/>
+			<nail x="-278" y="-332"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-746" y="-867">Heart_Num[3]!</label>
+			<nail x="-788" y="-723"/>
+			<nail x="-797" y="-731"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-788" y="-358">Heart_Num[9]!</label>
+			<nail x="-805" y="-332"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-771" y="-417">Heart_Num[8]!</label>
+			<nail x="-805" y="-383"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-958" y="-485">Heart_Num[7]!</label>
+			<nail x="-806" y="-443"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-848" y="-561">Heart_Num[6]!</label>
+			<nail x="-805" y="-502"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-754" y="-833">Heart_Num[4]!</label>
+			<nail x="-797" y="-672"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-754" y="-910">Heart_Num[2]!</label>
+			<nail x="-788" y="-816"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-771" y="-969">Heart_Num[1]!</label>
+			<nail x="-788" y="-901"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-848" y="-1029">Heart_Num[0]!</label>
+			<nail x="-788" y="-986"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-848" y="-621">Heart_Num[5]!</label>
+		</transition>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-516" y="-417">Heart_Num[9]!</label>
+			<nail x="-601" y="-358"/>
+		</transition>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-499" y="-476">Heart_Num[8]!</label>
+			<nail x="-601" y="-417"/>
+		</transition>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-499" y="-536">Heart_Num[7]!</label>
+			<nail x="-602" y="-464"/>
+		</transition>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-491" y="-570">Heart_Num[6]!</label>
+			<nail x="-601" y="-519"/>
+		</transition>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-508" y="-774">Heart_Num[4]!</label>
+			<nail x="-601" y="-689"/>
+		</transition>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-652" y="-638">Heart_Num[5]!</label>
+		</transition>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-533" y="-859">Heart_Num[3]!</label>
+			<nail x="-601" y="-765"/>
+		</transition>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-542" y="-927">Heart_Num[2]!</label>
+			<nail x="-593" y="-842"/>
+		</transition>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-559" y="-995">Heart_Num[1]!</label>
+			<nail x="-593" y="-910"/>
+		</transition>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="synchronisation" x="-635" y="-1029">Heart_Num[0]!</label>
+			<nail x="-593" y="-978"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id29"/>
+			<label kind="guard" x="-474" y="-646">t &gt; minSwitchInterval*1000</label>
+			<label kind="synchronisation" x="-431" y="-621">Heart_O!</label>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="guard" x="-169" y="-451">heart_manual &amp;&amp; t &gt; 50</label>
+			<label kind="synchronisation" x="-159" y="-426">Heart_V!</label>
+			<label kind="assignment" x="-151" y="-400">t = 0</label>
+			<nail x="-161" y="-459"/>
+			<nail x="-233" y="-427"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="guard" x="-97" y="-547">heart_manual</label>
+			<label kind="synchronisation" x="-97" y="-531">Heart_A!</label>
+			<label kind="assignment" x="-100" y="-510">t = 0</label>
+			<nail x="-105" y="-563"/>
+			<nail x="-137" y="-483"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="guard" x="-97" y="-667">t &gt; minSwitchInterval*1000</label>
+			<label kind="synchronisation" x="-97" y="-651">Heart_T!</label>
+			<label kind="assignment" x="-89" y="-627">t = 0</label>
+			<nail x="-273" y="-595"/>
+			<nail x="-121" y="-667"/>
+			<nail x="-105" y="-595"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="guard" x="-161" y="-779">t &gt; minSwitchInterval*1000</label>
+			<label kind="synchronisation" x="-145" y="-755">Heart_M!</label>
+			<label kind="assignment" x="-129" y="-731">t = 0</label>
+			<nail x="-201" y="-763"/>
+			<nail x="-129" y="-699"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="guard" x="-313" y="-859">t &gt; minSwitchInterval*1000</label>
+			<label kind="synchronisation" x="-305" y="-843">Heart_R!</label>
+			<label kind="assignment" x="-297" y="-827">t = 0</label>
+			<nail x="-241" y="-779"/>
+			<nail x="-313" y="-779"/>
+		</transition>
+	</template>
+	<template>
+		<name>PMKeyboard</name>
+		<declaration>clock t;</declaration>
+		<location id="id31" x="365" y="-263">
+		</location>
+		<location id="id32" x="-145" y="-289">
+		</location>
+		<location id="id33" x="-332" y="-289">
+			<committed/>
+		</location>
+		<location id="id34" x="76" y="-289">
+		</location>
+		<init ref="id31"/>
+		<transition>
+			<source ref="id33"/>
+			<target ref="id31"/>
+			<label kind="assignment" x="-483" y="-153">t = 0</label>
+			<nail x="-501" y="-17"/>
+			<nail x="102" y="17"/>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id34"/>
+			<label kind="guard" x="153" y="-331">t &gt; minSwitchInterval * 1000</label>
+			<label kind="synchronisation" x="238" y="-306">PM_O!</label>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id31"/>
+			<label kind="guard" x="212" y="-17">pm_manual</label>
+			<label kind="synchronisation" x="261" y="1">PM_V!</label>
+			<label kind="assignment" x="263" y="34">t = 0</label>
+			<nail x="341" y="-15"/>
+			<nail x="221" y="-39"/>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id31"/>
+			<label kind="guard" x="477" y="-39">pm_manual</label>
+			<label kind="synchronisation" x="485" y="-23">PM_A!</label>
+			<label kind="assignment" x="492" y="0">t = 0</label>
+			<nail x="517" y="-63"/>
+			<nail x="421" y="-15"/>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id31"/>
+			<label kind="guard" x="594" y="-119">t &gt; minSwitchInterval * 1000 &amp;&amp; change_mode</label>
+			<label kind="synchronisation" x="613" y="-143">PM_M!</label>
+			<label kind="assignment" x="628" y="-93">t = 0</label>
+			<nail x="613" y="-175"/>
+			<nail x="573" y="-87"/>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id31"/>
+			<label kind="guard" x="645" y="-263">t &gt; minSwitchInterval * 1000 &amp;&amp; change_mode</label>
+			<label kind="synchronisation" x="645" y="-295">PM_E!</label>
+			<label kind="assignment" x="645" y="-246">t = 0</label>
+			<nail x="381" y="-263"/>
+			<nail x="629" y="-319"/>
+			<nail x="629" y="-207"/>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id31"/>
+			<label kind="guard" x="611" y="-424">t &gt; minSwitchInterval * 1000 &amp;&amp; change_mode</label>
+			<label kind="synchronisation" x="588" y="-449">PM_S!</label>
+			<label kind="assignment" x="620" y="-407">t = 0</label>
+			<nail x="548" y="-465"/>
+			<nail x="604" y="-377"/>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id31"/>
+			<label kind="guard" x="373" y="-569">t &gt; minSwitchInterval * 1000 &amp;&amp; change_mode</label>
+			<label kind="synchronisation" x="397" y="-591">PM_N!</label>
+			<label kind="assignment" x="407" y="-535">t = 0</label>
+			<nail x="365" y="-503"/>
+			<nail x="509" y="-503"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-179" y="-561">PM_Num[3]!</label>
+			<nail x="-221" y="-417"/>
+			<nail x="-230" y="-425"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-221" y="-52">PM_Num[9]!</label>
+			<nail x="-238" y="-26"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-204" y="-111">PM_Num[8]!</label>
+			<nail x="-238" y="-77"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-391" y="-179">PM_Num[7]!</label>
+			<nail x="-239" y="-137"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-281" y="-255">PM_Num[6]!</label>
+			<nail x="-238" y="-196"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-187" y="-527">PM_Num[4]!</label>
+			<nail x="-230" y="-366"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-187" y="-604">PM_Num[2]!</label>
+			<nail x="-221" y="-510"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-204" y="-663">PM_Num[1]!</label>
+			<nail x="-221" y="-595"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-281" y="-723">PM_Num[0]!</label>
+			<nail x="-221" y="-680"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-281" y="-315">PM_Num[5]!</label>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="51" y="-111">PM_Num[9]!</label>
+			<nail x="-34" y="-52"/>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="68" y="-170">PM_Num[8]!</label>
+			<nail x="-34" y="-111"/>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="68" y="-230">PM_Num[7]!</label>
+			<nail x="-35" y="-158"/>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="76" y="-264">PM_Num[6]!</label>
+			<nail x="-34" y="-213"/>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="59" y="-468">PM_Num[4]!</label>
+			<nail x="-34" y="-383"/>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="-85" y="-332">PM_Num[5]!</label>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="34" y="-553">PM_Num[3]!</label>
+			<nail x="-34" y="-459"/>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="25" y="-621">PM_Num[2]!</label>
+			<nail x="-26" y="-536"/>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="8" y="-689">PM_Num[1]!</label>
+			<nail x="-26" y="-604"/>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id32"/>
+			<label kind="synchronisation" x="-68" y="-723">PM_Num[0]!</label>
+			<nail x="-26" y="-672"/>
+		</transition>
+	</template>
+	<template>
+		<name>HeartMode</name>
+		<declaration>int x0, x1;</declaration>
+		<location id="id35" x="-85" y="374">
+			<committed/>
+		</location>
+		<location id="id36" x="212" y="102">
+		</location>
+		<location id="id37" x="-17" y="-357">
+		</location>
+		<location id="id38" x="-561" y="-170">
+		</location>
+		<init ref="id38"/>
+		<transition>
+			<source ref="id38"/>
+			<target ref="id38"/>
+			<label kind="synchronisation" x="-697" y="-374">Heart_R?</label>
+			<label kind="assignment" x="-748" y="-340">heart_manual = false,
+heart_test = false</label>
+			<nail x="-765" y="-331"/>
+			<nail x="-637" y="-433"/>
+		</transition>
+		<transition>
+			<source ref="id38"/>
+			<target ref="id38"/>
+			<label kind="synchronisation" x="-714" y="-102">Heart_T?</label>
+			<label kind="assignment" x="-756" y="-76">heart_manual = false,
+heart_test = true</label>
+			<nail x="-782" y="-85"/>
+			<nail x="-697" y="0"/>
+		</transition>
+		<transition>
+			<source ref="id38"/>
+			<target ref="id38"/>
+			<label kind="synchronisation" x="-476" y="34">Heart_M?</label>
+			<label kind="assignment" x="-484" y="68">heart_manual = true,
+heart_test = false</label>
+			<nail x="-502" y="68"/>
+			<nail x="-374" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id35"/>
+			<target ref="id38"/>
+			<label kind="synchronisation" x="-220" y="166">HeartIntervalChange!</label>
+			<label kind="assignment" x="-280" y="76">heartInterval = (x1 == 0 &amp;&amp; x0 == 0) ? 10 : (x1*10+x0)</label>
+			<nail x="-238" y="-8"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="331" y="144">Heart_Num[9]?</label>
+			<label kind="assignment" x="348" y="161">x0 = 9</label>
+			<nail x="25" y="170"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="680" y="280">Heart_Num[0]?</label>
+			<label kind="assignment" x="680" y="306">x0 = 0</label>
+			<nail x="612" y="365"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="433" y="153">Heart_Num[8]?</label>
+			<label kind="assignment" x="433" y="170">x0 = 8</label>
+			<nail x="85" y="195"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="442" y="204">Heart_Num[7]?</label>
+			<label kind="assignment" x="442" y="221">x0 = 7</label>
+			<nail x="127" y="212"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="527" y="144">Heart_Num[6]?</label>
+			<label kind="assignment" x="544" y="161">x0 = 6</label>
+			<nail x="187" y="229"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="544" y="195">Heart_Num[5]?</label>
+			<label kind="assignment" x="561" y="212">x0 = 5</label>
+			<nail x="246" y="255"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="561" y="255">Heart_Num[4]?</label>
+			<label kind="assignment" x="561" y="272">x0 = 4</label>
+			<nail x="289" y="272"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="569" y="297">Heart_Num[3]?</label>
+			<label kind="assignment" x="594" y="314">x0 = 3</label>
+			<nail x="348" y="289"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="671" y="187">Heart_Num[2]?</label>
+			<label kind="assignment" x="688" y="204">x0 = 2</label>
+			<nail x="425" y="314"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="663" y="238">Heart_Num[1]?</label>
+			<label kind="assignment" x="680" y="255">x0 = 1</label>
+			<nail x="518" y="340"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="synchronisation" x="306" y="76">Heart_Num[9]?</label>
+			<label kind="assignment" x="306" y="93">x1 = 9</label>
+			<nail x="-68" y="-93"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="synchronisation" x="459" y="43">Heart_Num[8]?</label>
+			<label kind="assignment" x="468" y="60">x1 = 8</label>
+			<nail x="-17" y="-110"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="synchronisation" x="527" y="-8">Heart_Num[7]?</label>
+			<label kind="assignment" x="544" y="9">x1 = 7</label>
+			<nail x="25" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="synchronisation" x="578" y="-75">Heart_Num[6]?</label>
+			<label kind="assignment" x="578" y="-50">x1 = 6</label>
+			<nail x="92" y="-111"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="synchronisation" x="34" y="-391">Heart_Num[5]?</label>
+			<label kind="assignment" x="59" y="-365">x1 = 5</label>
+			<nail x="170" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="synchronisation" x="153" y="-408">Heart_Num[4]?</label>
+			<label kind="assignment" x="178" y="-374">x1 = 4</label>
+			<nail x="246" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="synchronisation" x="238" y="-297">Heart_Num[3]?</label>
+			<label kind="assignment" x="272" y="-280">x1 = 3</label>
+			<nail x="331" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="synchronisation" x="357" y="-255">Heart_Num[2]?</label>
+			<label kind="assignment" x="382" y="-238">x1 = 2</label>
+			<nail x="433" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="synchronisation" x="476" y="-212">Heart_Num[1]?</label>
+			<label kind="assignment" x="501" y="-187">x1 = 1</label>
+			<nail x="518" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="synchronisation" x="595" y="-204">Heart_Num[0]?</label>
+			<label kind="assignment" x="603" y="-178">x1 = 0</label>
+			<nail x="603" y="-110"/>
+		</transition>
+		<transition>
+			<source ref="id38"/>
+			<target ref="id37"/>
+			<label kind="synchronisation" x="-391" y="-280">Heart_O?</label>
+		</transition>
+	</template>
+	<template>
+		<name>PMMode</name>
+		<declaration>int x0, x1;</declaration>
+		<location id="id39" x="-374" y="-144">
+		</location>
+		<location id="id40" x="110" y="-51">
+		</location>
+		<location id="id41" x="-148" y="223">
+			<committed/>
+		</location>
+		<location id="id42" x="42" y="-459">
+		</location>
+		<init ref="id39"/>
+		<transition>
+			<source ref="id41"/>
+			<target ref="id39"/>
+			<label kind="synchronisation" x="-416" y="0">PMIntervalChange!</label>
+			<label kind="assignment" x="-501" y="85">pmInterval = (x1 == 0 &amp;&amp; x0 == 0) ? 10 : (x1*10+x0)</label>
+			<nail x="-212" y="-17"/>
+		</transition>
+		<transition>
+			<source ref="id39"/>
+			<target ref="id42"/>
+			<label kind="synchronisation" x="-229" y="-314">PM_O?</label>
+		</transition>
+		<transition>
+			<source ref="id39"/>
+			<target ref="id39"/>
+			<label kind="synchronisation" x="-693" y="-463">PM_M?</label>
+			<label kind="assignment" x="-749" y="-423">LRI = manualLRI,
+URI = manualURI,
+pm_manual = true</label>
+			<nail x="-629" y="-343"/>
+			<nail x="-629" y="-543"/>
+		</transition>
+		<transition>
+			<source ref="id39"/>
+			<target ref="id39"/>
+			<label kind="synchronisation" x="-726" y="-246">PM_E?</label>
+			<label kind="assignment" x="-870" y="-350">LRI = sportLRI,
+URI = sportURI,
+pm_manual = false</label>
+			<nail x="-630" y="-254"/>
+			<nail x="-782" y="-254"/>
+		</transition>
+		<transition>
+			<source ref="id39"/>
+			<target ref="id39"/>
+			<label kind="synchronisation" x="-911" y="-137">PM_S?</label>
+			<label kind="assignment" x="-919" y="-105">LRI = sleepLRI,
+URI = sleepURI,
+pm_manual = false</label>
+			<nail x="-935" y="-185"/>
+			<nail x="-935" y="-25"/>
+		</transition>
+		<transition>
+			<source ref="id39"/>
+			<target ref="id39"/>
+			<label kind="synchronisation" x="-367" y="-559">PM_N?</label>
+			<label kind="assignment" x="-279" y="-495">LRI = normalLRI,
+URI = normalURI,
+pm_manual = false</label>
+			<nail x="-439" y="-535"/>
+			<nail x="-247" y="-535"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id41"/>
+			<label kind="synchronisation" x="229" y="-17">PM_Num[9]?</label>
+			<label kind="assignment" x="246" y="0">x0 = 9</label>
+			<nail x="-38" y="19"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id41"/>
+			<label kind="synchronisation" x="569" y="127">PM_Num[0]?</label>
+			<label kind="assignment" x="586" y="153">x0 = 0</label>
+			<nail x="501" y="204"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id41"/>
+			<label kind="synchronisation" x="331" y="-8">PM_Num[8]?</label>
+			<label kind="assignment" x="331" y="9">x0 = 8</label>
+			<nail x="22" y="44"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id41"/>
+			<label kind="synchronisation" x="340" y="43">PM_Num[7]?</label>
+			<label kind="assignment" x="340" y="60">x0 = 7</label>
+			<nail x="64" y="61"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id41"/>
+			<label kind="synchronisation" x="425" y="-17">PM_Num[6]?</label>
+			<label kind="assignment" x="442" y="0">x0 = 6</label>
+			<nail x="124" y="78"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id41"/>
+			<label kind="synchronisation" x="442" y="34">PM_Num[5]?</label>
+			<label kind="assignment" x="459" y="51">x0 = 5</label>
+			<nail x="183" y="104"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id41"/>
+			<label kind="synchronisation" x="459" y="94">PM_Num[4]?</label>
+			<label kind="assignment" x="459" y="111">x0 = 4</label>
+			<nail x="226" y="121"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id41"/>
+			<label kind="synchronisation" x="467" y="136">PM_Num[3]?</label>
+			<label kind="assignment" x="492" y="153">x0 = 3</label>
+			<nail x="246" y="128"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id41"/>
+			<label kind="synchronisation" x="569" y="26">PM_Num[2]?</label>
+			<label kind="assignment" x="586" y="43">x0 = 2</label>
+			<nail x="323" y="153"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id41"/>
+			<label kind="synchronisation" x="561" y="77">PM_Num[1]?</label>
+			<label kind="assignment" x="578" y="94">x0 = 1</label>
+			<nail x="416" y="179"/>
+		</transition>
+		<transition>
+			<source ref="id42"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="255" y="-127">PM_Num[9]?</label>
+			<label kind="assignment" x="255" y="-110">x1 = 9</label>
+			<nail x="-131" y="-244"/>
+		</transition>
+		<transition>
+			<source ref="id42"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="382" y="-127">PM_Num[8]?</label>
+			<label kind="assignment" x="405" y="-91">x1 = 8</label>
+			<nail x="-80" y="-261"/>
+		</transition>
+		<transition>
+			<source ref="id42"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="464" y="-159">PM_Num[7]?</label>
+			<label kind="assignment" x="481" y="-142">x1 = 7</label>
+			<nail x="-38" y="-253"/>
+		</transition>
+		<transition>
+			<source ref="id42"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="515" y="-226">PM_Num[6]?</label>
+			<label kind="assignment" x="515" y="-201">x1 = 6</label>
+			<nail x="29" y="-262"/>
+		</transition>
+		<transition>
+			<source ref="id42"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="-29" y="-542">PM_Num[5]?</label>
+			<label kind="assignment" x="-4" y="-516">x1 = 5</label>
+			<nail x="107" y="-253"/>
+		</transition>
+		<transition>
+			<source ref="id42"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="90" y="-559">PM_Num[4]?</label>
+			<label kind="assignment" x="115" y="-525">x1 = 4</label>
+			<nail x="183" y="-253"/>
+		</transition>
+		<transition>
+			<source ref="id42"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="175" y="-448">PM_Num[3]?</label>
+			<label kind="assignment" x="209" y="-431">x1 = 3</label>
+			<nail x="268" y="-253"/>
+		</transition>
+		<transition>
+			<source ref="id42"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="294" y="-406">PM_Num[2]?</label>
+			<label kind="assignment" x="319" y="-389">x1 = 2</label>
+			<nail x="370" y="-253"/>
+		</transition>
+		<transition>
+			<source ref="id42"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="413" y="-363">PM_Num[1]?</label>
+			<label kind="assignment" x="438" y="-338">x1 = 1</label>
+			<nail x="455" y="-253"/>
+		</transition>
+		<transition>
+			<source ref="id42"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="532" y="-355">PM_Num[0]?</label>
+			<label kind="assignment" x="540" y="-329">x1 = 0</label>
+			<nail x="540" y="-261"/>
+		</transition>
+	</template>
+	<system>system HeartSignal, HeartPace, PMSense, PMPace, LED, HeartDisplay, PMDisplay, Alarm, HeartMode, PMMode, HeartKeyboard;</system>
+	<queries>
+		<query>
+			<formula>A[] !deadlock
+			</formula>
+			<comment>
+			</comment>
+		</query>
+	</queries>
+</nta>

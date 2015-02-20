@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_1.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+clock heart_t;
+
+broadcast chan APace, VPace;
+broadcast chan ASense, VSense; 
+chan ASignal, VSignal;
+chan AlarmHigh, AlarmLow;
+broadcast chan AlarmCheck;
+//broadcast chan ASignalBroad, VSignalBroad;
+
+//keyboard
+//chan Heart_R, Heart_M, Heart_T, Heart_A, Heart_V;
+chan Heart_O10, Heart_O20, Heart_O30, Heart_O60, Heart_O100;
+//chan PM_N, PM_S, PM_E, PM_M, PM_A, PM_V;
+
+// PACING CONSTRAINTS
+
+const int AVI = 60;			// 30 - 100
+const int PVRP = 150; 			// 150 - 500
+const int minVwait = 40;		// 0 - 200
+const int minAwait = 40;		// 0 - 100
+
+const int sleepURI = 1000;	const int sleepLRI = 2000;
+const int normalURI = 600;	const int normalLRI = 1500;
+const int sportURI = 343;	const int sportLRI = 600;
+const int manualURI = 343;	const int manualLRI = 2000;
+
+const int minSwitchInterval = 5;
+
+const int testCount=2;
+
+//variables
+
+int URI = normalURI;	int LRI = normalLRI;
+
+int beats = 0;
+int interval = 10;
+int avg_rate = 0;
+// flags
+
+//bool heart_manual = false;
+//bool pm_manual = false;
+bool extra_ventricular = false;
+bool heart_test = false;                //set to true to enable the test mode, false to enable regular functioning
+bool result[testCount];</declaration>
+	<template>
+		<name x="5" y="5">HeartSignal</name>
+		<declaration>// Place local declarations here.
+</declaration>
+		<location id="id0" x="-416" y="-331">
+		</location>
+		<init ref="id0"/>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-472" y="-139">heart_t &gt; minVwait &amp;&amp; !heart_test</label>
+			<label kind="synchronisation" x="-440" y="-115">VSignal!</label>
+			<label kind="assignment" x="-450" y="-93">heart_t = 0,
+beats +=1</label>
+			<nail x="-528" y="-147"/>
+			<nail x="-304" y="-147"/>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-472" y="-587">heart_t &gt; minAwait &amp;&amp; !heart_test</label>
+			<label kind="synchronisation" x="-440" y="-563">ASignal!</label>
+			<label kind="assignment" x="-448" y="-523">heart_t = 0</label>
+			<nail x="-528" y="-531"/>
+			<nail x="-296" y="-531"/>
+		</transition>
+	</template>
+	<template>
+		<name>HeartPace</name>
+		<location id="id1" x="-608" y="-264">
+		</location>
+		<init ref="id1"/>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-694" y="-206">!heart_test</label>
+			<label kind="synchronisation" x="-632" y="-80">VPace?</label>
+			<label kind="assignment" x="-640" y="-56">heart_t = 0,
+beats += 1</label>
+			<nail x="-616" y="-248"/>
+			<nail x="-712" y="-96"/>
+			<nail x="-512" y="-96"/>
+			<nail x="-600" y="-248"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-694" y="-394">!heart_test</label>
+			<label kind="synchronisation" x="-632" y="-496">APace?</label>
+			<label kind="assignment" x="-640" y="-480">heart_t = 0</label>
+			<nail x="-712" y="-456"/>
+			<nail x="-504" y="-456"/>
+		</transition>
+	</template>
+	<template>
+		<name>Test</name>
+		<declaration>bool checkResults()
+{
+    bool resultFlag=true;
+    int i=0;
+    for(i=0; i&lt;testCount;i++)
+    {
+        if(!result[i])
+        {
+            resultFlag=false;
+        }
+    }
+    return resultFlag;
+}</declaration>
+		<location id="id2" x="714" y="-102">
+			<name x="680" y="-85">All_Tests_Passed</name>
+			<urgent/>
+		</location>
+		<location id="id3" x="578" y="-102">
+			<urgent/>
+		</location>
+		<location id="id4" x="238" y="-102">
+			<label kind="invariant" x="195" y="-161">heart_t&lt;=(LRI-AVI)+1</label>
+		</location>
+		<location id="id5" x="408" y="-102">
+			<committed/>
+		</location>
+		<location id="id6" x="68" y="-102">
+			<urgent/>
+		</location>
+		<location id="id7" x="-34" y="-102">
+			<committed/>
+		</location>
+		<location id="id8" x="-170" y="-102">
+			<label kind="invariant" x="-195" y="-161">heart_t&lt;=AVI+1</label>
+		</location>
+		<location id="id9" x="-306" y="-102">
+		</location>
+		<init ref="id9"/>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id9"/>
+			<label kind="assignment" x="722" y="-221">heart_t=0</label>
+			<nail x="714" y="-272"/>
+			<nail x="-306" y="-272"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id2"/>
+			<label kind="guard" x="586" y="-136">checkResults()</label>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id9"/>
+			<label kind="guard" x="68" y="-221">!heart_test</label>
+			<nail x="68" y="-272"/>
+			<nail x="-306" y="-272"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-288" y="-306">!checkResults()</label>
+			<label kind="assignment" x="586" y="-212">heart_t=0</label>
+			<nail x="578" y="-272"/>
+			<nail x="-306" y="-272"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id3"/>
+			<label kind="guard" x="426" y="-136">heart_t&lt;=(LRI-AVI)</label>
+			<label kind="assignment" x="426" y="-102">result[1]=true</label>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id3"/>
+			<label kind="guard" x="256" y="0">heart_t&gt;(LRI-AVI)</label>
+			<label kind="assignment" x="399" y="34">result[1]=false</label>
+			<nail x="238" y="34"/>
+			<nail x="578" y="34"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id3"/>
+			<label kind="guard" x="426" y="-68">heart_t&gt;(LRI-AVI)</label>
+			<label kind="assignment" x="426" y="-34">result[1]=false</label>
+			<nail x="408" y="-34"/>
+			<nail x="578" y="-34"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id5"/>
+			<label kind="synchronisation" x="306" y="-119">APace?</label>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id4"/>
+			<label kind="guard" x="102" y="-136">heart_test</label>
+			<label kind="synchronisation" x="110" y="-119">VSignal!</label>
+			<label kind="assignment" x="119" y="-93">heart_t=0</label>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-16" y="-68">heart_t&gt;AVI</label>
+			<label kind="assignment" x="-16" y="-34">result[0]=false</label>
+			<nail x="-34" y="-34"/>
+			<nail x="68" y="-34"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-16" y="-136">heart_t&lt;=AVI</label>
+			<label kind="assignment" x="-16" y="-102">result[0]=true</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-51" y="9">heart_t&gt;AVI</label>
+			<label kind="assignment" x="-50" y="34">result[0]=false</label>
+			<nail x="-170" y="34"/>
+			<nail x="68" y="34"/>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="-152" y="-119">VPace?</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-288" y="-136">heart_test</label>
+			<label kind="synchronisation" x="-288" y="-119">ASignal!</label>
+			<label kind="assignment" x="-288" y="-102">heart_t=0</label>
+		</transition>
+	</template>
+	<template>
+		<name>PMSense</name>
+		<declaration>clock t;</declaration>
+		<location id="id10" x="-1818" y="-1426">
+			<committed/>
+		</location>
+		<location id="id11" x="-1506" y="-1426">
+			<committed/>
+		</location>
+		<location id="id12" x="-1666" y="-1554">
+		</location>
+		<location id="id13" x="-1658" y="-1098">
+			<name x="-1700" y="-1088">VentricularCheck</name>
+			<committed/>
+		</location>
+		<location id="id14" x="-1378" y="-1266">
+			<name x="-1368" y="-1266">AtrialEvent</name>
+		</location>
+		<location id="id15" x="-1666" y="-1258">
+			<name x="-1700" y="-1292">PVRP_Check</name>
+			<committed/>
+		</location>
+		<location id="id16" x="-1938" y="-1258">
+			<name x="-2074" y="-1266">VentricularEvent</name>
+		</location>
+		<init ref="id12"/>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id13"/>
+			<label kind="guard" x="-1708" y="-1224">t&gt;=URI</label>
+			<label kind="synchronisation" x="-1683" y="-1173">VSignal?</label>
+			<label kind="assignment" x="-1725" y="-1207">extra_ventricular = true</label>
+			<nail x="-1657" y="-1190"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id16"/>
+			<label kind="synchronisation" x="-1914" y="-1394">VSense!</label>
+			<label kind="assignment" x="-1850" y="-1354">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="-1802" y="-1505">VSignal?</label>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id14"/>
+			<label kind="synchronisation" x="-1466" y="-1410">ASense!</label>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="-1578" y="-1514">ASignal?</label>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id16"/>
+			<label kind="guard" x="-2010" y="-1338">t &lt; PVRP</label>
+			<label kind="synchronisation" x="-2002" y="-1370">ASignal?</label>
+			<nail x="-2034" y="-1338"/>
+			<nail x="-1938" y="-1338"/>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id16"/>
+			<label kind="guard" x="-1989" y="-1213">t&lt;URI</label>
+			<label kind="synchronisation" x="-2006" y="-1179">VSignal?</label>
+			<nail x="-1938" y="-1186"/>
+			<nail x="-2042" y="-1186"/>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id16"/>
+			<label kind="synchronisation" x="-1674" y="-1034">VPace?</label>
+			<label kind="assignment" x="-1666" y="-1002">t = 0</label>
+			<nail x="-1466" y="-1010"/>
+			<nail x="-1826" y="-1010"/>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id16"/>
+			<label kind="synchronisation" x="-1853" y="-1181">VSense!</label>
+			<label kind="assignment" x="-1827" y="-1156">t = 0,
+extra_ventricular = false</label>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id14"/>
+			<label kind="synchronisation" x="-1690" y="-1386">APace?</label>
+			<nail x="-1666" y="-1362"/>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id14"/>
+			<label kind="synchronisation" x="-1306" y="-1346">ASignal?</label>
+			<nail x="-1378" y="-1378"/>
+			<nail x="-1258" y="-1266"/>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id13"/>
+			<label kind="synchronisation" x="-1538" y="-1162">VSignal?</label>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id14"/>
+			<label kind="synchronisation" x="-1594" y="-1290">ASense!</label>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id15"/>
+			<label kind="guard" x="-1818" y="-1258">t &gt;= PVRP</label>
+			<label kind="synchronisation" x="-1818" y="-1282">ASignal?</label>
+		</transition>
+	</template>
+	<template>
+		<name>PMPace</name>
+		<declaration>clock t;
+//clock a_t;
+//clock v_t;
+</declaration>
+		<location id="id17" x="-944" y="-848">
+		</location>
+		<location id="id18" x="-672" y="-584">
+			<name x="-682" y="-618">AtrialEventOccured</name>
+			<label kind="invariant" x="-640" y="-600">t &lt;= AVI</label>
+		</location>
+		<location id="id19" x="-1216" y="-584">
+			<name x="-1275" y="-620">VentricularEventOccured</name>
+			<label kind="invariant" x="-1344" y="-592">t &lt;= LRI - AVI</label>
+		</location>
+		<init ref="id17"/>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="-1300" y="-535">VSense?</label>
+			<label kind="assignment" x="-1283" y="-654">t = 0</label>
+			<nail x="-1327" y="-515"/>
+			<nail x="-1327" y="-668"/>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id19"/>
+			<label kind="guard" x="-766" y="-550">t&gt;=AVI</label>
+			<label kind="synchronisation" x="-1024" y="-480">VPace!</label>
+			<label kind="assignment" x="-912" y="-480">t = 0</label>
+			<nail x="-784" y="-448"/>
+			<nail x="-1096" y="-448"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-1045" y="-620">t&gt;=LRI-AVI</label>
+			<label kind="synchronisation" x="-1024" y="-656">APace!</label>
+			<label kind="assignment" x="-912" y="-656">t = 0</label>
+			<nail x="-1080" y="-632"/>
+			<nail x="-816" y="-632"/>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="-1152" y="-752">VSense?</label>
+			<label kind="assignment" x="-1144" y="-728">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id18"/>
+			<label kind="synchronisation" x="-792" y="-760">ASense?</label>
+			<label kind="assignment" x="-784" y="-736">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="-1032" y="-384">VSense?</label>
+			<label kind="assignment" x="-912" y="-376">t = 0</label>
+			<nail x="-744" y="-392"/>
+			<nail x="-1144" y="-392"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id18"/>
+			<label kind="synchronisation" x="-1032" y="-576">ASense?</label>
+			<label kind="assignment" x="-912" y="-576">t = 0</label>
+		</transition>
+	</template>
+	<template>
+		<name>Alarm</name>
+		<location id="id20" x="0" y="178">
+			<name x="-34" y="187">LowRateAlarm</name>
+			<committed/>
+		</location>
+		<location id="id21" x="-221" y="0">
+			<name x="-212" y="-34">HighRateAlarm</name>
+			<committed/>
+		</location>
+		<location id="id22" x="221" y="0">
+			<name x="211" y="-34">OkAlarm</name>
+			<committed/>
+		</location>
+		<location id="id23" x="0" y="0">
+		</location>
+		<init ref="id23"/>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id23"/>
+			<nail x="-110" y="178"/>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id20"/>
+			<label kind="guard" x="0" y="55">avg_rate &lt; 40</label>
+			<label kind="synchronisation" x="0" y="72">AlarmCheck?</label>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id23"/>
+			<nail x="-221" y="-136"/>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id21"/>
+			<label kind="guard" x="-161" y="17">avg_rate &gt; 100</label>
+			<label kind="synchronisation" x="-153" y="0">AlarmCheck?</label>
+		</transition>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id23"/>
+			<nail x="221" y="119"/>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id22"/>
+			<label kind="guard" x="-8" y="-42">avg_rate &gt;= 40 &amp;&amp; avg_rate &lt;= 100</label>
+			<label kind="synchronisation" x="76" y="-17">AlarmCheck?</label>
+		</transition>
+	</template>
+	<template>
+		<name>LED</name>
+		<location id="id24" x="-781" y="-432">
+			<name x="-791" y="-462">LEDVSignal</name>
+			<committed/>
+		</location>
+		<location id="id25" x="-765" y="-136">
+			<name x="-885" y="-144">LEDASignal</name>
+			<committed/>
+		</location>
+		<location id="id26" x="-477" y="-144">
+			<name x="-453" y="-152">LEDVPace</name>
+			<committed/>
+		</location>
+		<location id="id27" x="-485" y="-432">
+			<name x="-495" y="-462">LEDAPace</name>
+			<committed/>
+		</location>
+		<location id="id28" x="-629" y="-272">
+		</location>
+		<init ref="id28"/>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id28"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id24"/>
+			<label kind="synchronisation" x="-841" y="-374">VSense?</label>
+			<nail x="-781" y="-272"/>
+		</transition>
+		<transition>
+			<source ref="id25"/>
+			<target ref="id28"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id25"/>
+			<label kind="synchronisation" x="-725" y="-128">ASense?</label>
+			<nail x="-629" y="-136"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id28"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id26"/>
+			<label kind="synchronisation" x="-461" y="-248">VPace?</label>
+			<nail x="-477" y="-272"/>
+		</transition>
+		<transition>
+			<source ref="id27"/>
+			<target ref="id28"/>
+		</transition>
+		<transition>
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-629" y="-456">APace?</label>
+			<nail x="-629" y="-432"/>
+		</transition>
+	</template>
+	<template>
+		<name>Display</name>
+		<declaration>clock display_t;</declaration>
+		<location id="id29" x="-399" y="-263">
+			<name x="-425" y="-297">Display_Rate</name>
+			<committed/>
+		</location>
+		<location id="id30" x="-391" y="-76">
+			<label kind="invariant" x="-346" y="-125">display_t &lt;= interval * 1000
+&amp;&amp; beats &lt; 10000</label>
+		</location>
+		<init ref="id30"/>
+		<transition>
+			<source ref="id29"/>
+			<target ref="id30"/>
+			<label kind="synchronisation" x="-306" y="-238">AlarmCheck!</label>
+			<label kind="assignment" x="-331" y="-212">beats = 0,
+display_t = 0</label>
+			<nail x="-306" y="-263"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id29"/>
+			<label kind="guard" x="-629" y="-195">display_t &gt;= interval * 1000</label>
+			<label kind="assignment" x="-654" y="-221">avg_rate = (beats*60)/interval</label>
+			<nail x="-501" y="-263"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="synchronisation" x="-544" y="59">Heart_O60?</label>
+			<label kind="assignment" x="-569" y="102">interval = 60,
+display_t = 0</label>
+			<nail x="-467" y="119"/>
+			<nail x="-578" y="51"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="synchronisation" x="-408" y="110">Heart_O30?</label>
+			<label kind="assignment" x="-416" y="127">interval = 30,
+display_t = 0</label>
+			<nail x="-314" y="127"/>
+			<nail x="-442" y="127"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="synchronisation" x="-289" y="59">Heart_O20?</label>
+			<label kind="assignment" x="-255" y="102">interval = 20,
+display_t = 0</label>
+			<nail x="-187" y="42"/>
+			<nail x="-289" y="119"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="synchronisation" x="-159" y="-52">Heart_O10?</label>
+			<label kind="assignment" x="-159" y="-36">interval = 10,
+display_t = 0</label>
+			<nail x="-167" y="-76"/>
+			<nail x="-167" y="20"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id30"/>
+			<label kind="synchronisation" x="-687" y="-36">Heart_O100?</label>
+			<label kind="assignment" x="-687" y="-20">interval = 100,
+display_t = 0</label>
+			<nail x="-595" y="25"/>
+			<nail x="-595" y="-76"/>
+		</transition>
+	</template>
+	<system>system HeartSignal, HeartPace, PMSense, PMPace, LED, Display, Alarm, Test;</system>
+</nta>
